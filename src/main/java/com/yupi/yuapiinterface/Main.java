@@ -12,7 +12,7 @@ public class Main {
         String result1 = yuApiClient.getNameByGet("鱼皮");
         String result2 = yuApiClient.getNameByPost("鱼皮");
         User user = new User();
-        user.setUsername("鲤鱼旗");
+        user.setUsername("liyuqi");
         String result3 = yuApiClient.getUserNameByPost(user);
         System.out.println(result1);
         System.out.println(result2);
