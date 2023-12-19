@@ -6,7 +6,9 @@ import com.yupi.yuapiinterface.model.User;
 
 public class Main {
     public static void main(String[] args) {
-        YuApiClient yuApiClient = new YuApiClient();
+        String accessKey = "yupi";
+        String secretKey = "abcdefgh";
+        YuApiClient yuApiClient = new YuApiClient(accessKey,secretKey);
         String result1 = yuApiClient.getNameByGet("鱼皮");
         String result2 = yuApiClient.getNameByPost("鱼皮");
         User user = new User();
