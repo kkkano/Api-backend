@@ -256,18 +256,7 @@ public class InterfaceInfoController {
         if (oldInterfaceInfo == null) {
             throw new BusinessException(ErrorCode.NOT_FOUND_ERROR);
         }
-        // 2.判断该接口是否可以调用
-        // 创建一个User对象(这里先模拟一下，搞个假数据)
-        com.yupi.yuapiclientsdk.model.User user = new com.yupi.yuapiclientsdk.model.User();
-        // 设置user对象的username属性为"test"
-        user.setUsername("test");
-        // 通过yuApiClient的getUsernameByPost方法传入user对象，并将返回的username赋值给username变量
-        String username = yuApiClient.getUserNameByPost(user);
-        // 如果username为空或空白字符串
-        if (StringUtils.isBlank(username)) {
-            // 抛出系统错误的业务异常，表示系统内部异常，并附带错误信息"接口验证失败"
-            throw new BusinessException(ErrorCode.SYSTEM_ERROR, "接口验证失败");
-        }
+        
         // 创建一个InterfaceInfo对象
         InterfaceInfo interfaceInfo = new InterfaceInfo();
         // 设置interfaceInfo的id属性为id
