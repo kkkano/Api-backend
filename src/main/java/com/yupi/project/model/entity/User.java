@@ -19,7 +19,8 @@ public class User implements Serializable {
      */
     @TableId(type = IdType.AUTO)
     private Long id;
-
+    private String accessKey;
+    private String secretKey;
     /**
      * 用户昵称
      */
