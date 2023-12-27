@@ -2,11 +2,13 @@ package com.yupi.project.controller;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.google.gson.Gson;
 import com.yupi.project.annotation.AuthCheck;
 import com.yupi.project.common.*;
 import com.yupi.project.constant.CommonConstant;
 import com.yupi.project.exception.BusinessException;
 import com.yupi.project.model.dto.interfaceInfo.InterfaceInfoAddRequest;
+import com.yupi.project.model.dto.interfaceInfo.InterfaceInfoInvokeRequest;
 import com.yupi.project.model.dto.interfaceInfo.InterfaceInfoQueryRequest;
 import com.yupi.project.model.dto.interfaceInfo.InterfaceInfoUpdateRequest;
 import com.yupi.project.model.entity.InterfaceInfo;
@@ -193,6 +195,7 @@ public class InterfaceInfoController {
         Page<InterfaceInfo> interfaceInfoPage = interfaceInfoService.page(new Page<>(current, size), queryWrapper);
         return ResultUtils.success(interfaceInfoPage);
     }
+
     /**
      * 发布
      *
@@ -236,6 +239,7 @@ public class InterfaceInfoController {
         // 返回一个成功的响应，响应体中携带result值
         return ResultUtils.success(result);
     }
+
     /**
      * 下线
      *
@@ -246,7 +250,7 @@ public class InterfaceInfoController {
     @PostMapping("/offline")
     @AuthCheck(mustRole = "admin")
     public BaseResponse<Boolean> offlineInterfaceInfo(@RequestBody IdRequest idRequest,
-                                                     HttpServletRequest request) {
+                                                      HttpServletRequest request) {
         if (idRequest == null || idRequest.getId() <= 0) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
@@ -256,7 +260,7 @@ public class InterfaceInfoController {
         if (oldInterfaceInfo == null) {
             throw new BusinessException(ErrorCode.NOT_FOUND_ERROR);
         }
-        
+
         // 创建一个InterfaceInfo对象
         InterfaceInfo interfaceInfo = new InterfaceInfo();
         // 设置interfaceInfo的id属性为id
@@ -269,6 +273,44 @@ public class InterfaceInfoController {
         return ResultUtils.success(result);
     }
 
-    // endregion
-
+    /**
+     * 测试调用
+     *
+     * @param interfaceInfoInvokeRequest
+     * @param request
+     * @return
+     */
+    @PostMapping("/invoke")
+    public BaseResponse<Object> invokeInterfaceInfo(@RequestBody InterfaceInfoInvokeRequest interfaceInfoInvokeRequest,
+                                                    HttpServletRequest request) {
+        if (interfaceInfoInvokeRequest == null || interfaceInfoInvokeRequest.getId() <= 0) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR);
+        }
+        long id = interfaceInfoInvokeRequest.getId();
+        String userRequestParams = interfaceInfoInvokeRequest.getUserRequestParams();
+        InterfaceInfo oldInterfaceInfo = interfaceInfoService.getById(id);
+        if (oldInterfaceInfo == null) {
+            throw new BusinessException(ErrorCode.NOT_FOUND_ERROR);
+        }
+        if (oldInterfaceInfo.getStatus() == InterfaceInfoStatusEnum.OFFLINE.getValue()) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "接口已关闭");
+        }
+        // 获取当前登录用户的ak和sk，这样相当于用户自己的这个身份去调用，
+        // 也不会担心它刷接口，因为知道是谁刷了这个接口，会比较安全
+        User loginUser = userService.getLoginUser(request);
+        String accessKey = loginUser.getAccessKey();
+        String secretKey = loginUser.getSecretKey();
+        //临时的yuapiclient对象
+        YuApiClient tempClient = new YuApiClient(accessKey,secretKey);
+        // 我们只需要进行测试调用，所以我们需要解析传递过来的参数。
+        Gson gson = new Gson();
+        // 将用户请求参数转换为com.yupi.yuapiclientsdk.model.User对象
+        com.yupi.yuapiclientsdk.model.User user = gson.fromJson(userRequestParams, com.yupi.yuapiclientsdk.model.User.class);
+        // 调用YuApiClient的getUsernameByPost方法，传入用户对象，获取用户名
+//        String usernameByPost = this.yuApiClient.getUserNameByPost(user);
+        String usernameByPost = tempClient.getUserNameByPost(user);
+        // 返回成功响应，并包含调用结果
+        return ResultUtils.success(usernameByPost);
+    }
 }
+
