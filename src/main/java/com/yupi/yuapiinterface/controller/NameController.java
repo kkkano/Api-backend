@@ -1,7 +1,8 @@
 package com.yupi.yuapiinterface.controller;
 
-import com.yupi.yuapiinterface.model.User;
-import com.yupi.yuapiinterface.utils.SignUtils;
+import com.yupi.yuapiclientsdk.model.User;
+
+import com.yupi.yuapiclientsdk.utils.SignUtils;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
@@ -46,6 +47,8 @@ public class NameController {
         if (!sign.equals(serverSign)){
             throw new RuntimeException("无权限");
         }
-        return "POST 用户名字是" + user.getUsername();
+//        return "POST 用户名字是" + user.getUsername();
+        String result ="POST 用户名字是" + user.getUsername();
+        return result;
     }
 }
