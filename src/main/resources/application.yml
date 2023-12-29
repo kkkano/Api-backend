@@ -1,0 +1,22 @@
+server:
+  port: 8090
+spring:
+  cloud:
+    gateway:
+      routes:
+        # 将请求路径以/api/**开头的请求转发到目标URI https://yupi.icu
+        - id: path_route
+          uri: https://yupi.icu
+          predicates:
+            - Path=/api/**
+        # 将请求路径以/baidu/**开头的请求转发到目标URI https://baidu.com
+        - id: path_route2
+          uri: https://baidu.com
+          predicates:
+            - Path=/baidu/**
+logging:
+  level:
+    org:
+      springframework:
+        cloud:
+          gateway: trace
