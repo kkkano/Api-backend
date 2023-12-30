@@ -3,17 +3,15 @@ server:
 spring:
   cloud:
     gateway:
+      default-filters:
+        - AddResponseHeader=source, yupi
       routes:
-        # 将请求路径以/api/**开头的请求转发到目标URI https://yupi.icu
-        - id: path_route
-          uri: https://yupi.icu
+        # 定义了一个名为"api_route"的路由规则,该规则将匹配以"/api/"开头的路径,例如"/api/user",
+        # 并将这些请求转发到"http://localhost:8123"这个目标地址
+        - id: api_route
+          uri: http://localhost:8123
           predicates:
             - Path=/api/**
-        # 将请求路径以/baidu/**开头的请求转发到目标URI https://baidu.com
-        - id: path_route2
-          uri: https://baidu.com
-          predicates:
-            - Path=/baidu/**
 logging:
   level:
     org:
