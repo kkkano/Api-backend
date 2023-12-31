@@ -6,15 +6,38 @@ spring:
       default-filters:
         - AddResponseHeader=source, yupi
       routes:
-        # 定义了一个名为"api_route"的路由规则,该规则将匹配以"/api/"开头的路径,例如"/api/user",
-        # 并将这些请求转发到"http://localhost:8123"这个目标地址
         - id: api_route
           uri: http://localhost:8123
           predicates:
             - Path=/api/**
+#        - id: add_request_header_route
+#          uri: http://localhost:8123
+#          predicates:
+#            - Path=/api/**
+#          filters:
+#            - AddRequestHeader=yupi, swag
+#            - AddRequestParameter=name, dog
+#            - name: CircuitBreaker
+#              args:
+#                name: myCircuitBreaker
+#                fallbackUri: forward:/fallback
+#        - id: yupi-fallback
+#          uri: https://yupi.icu
+#          predicates:
+#            - Path=/fallback
 logging:
   level:
     org:
       springframework:
         cloud:
           gateway: trace
+dubbo:
+  application:
+    name: dubbo-springboot-demo-provider
+  protocol:
+    name: dubbo
+    port: -1
+  registry:
+    id: nacos-registry
+    address: nacos://localhost:8848
+
