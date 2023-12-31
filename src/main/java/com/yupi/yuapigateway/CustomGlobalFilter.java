@@ -65,19 +65,11 @@ public class CustomGlobalFilter implements GlobalFilter, Ordered {
             return handleNoAuth(response);
         }
         // 时间和当前时间不能超过 5 分钟
-        // 首先,获取当前时间的时间戳,以秒为单位
-    // System.currentTimeMillis()返回当前时间的毫秒数，除以1000后得到当前时间的秒数。
         Long currentTime = System.currentTimeMillis() / 1000;
-    // 定义一个常量FIVE_MINUTES,表示五分钟的时间间隔(乘以60,将分钟转换为秒,得到五分钟的时间间隔)。
         final Long FIVE_MINUTES = 60 * 5L;
-    // 判断当前时间与传入的时间戳是否相差五分钟或以上
-    // Long.parseLong(timestamp)将传入的时间戳转换成长整型
-    // 然后计算当前时间与传入时间戳之间的差值(以秒为单位),如果差值大于等于五分钟,则返回true,否则返回false
         if ((currentTime - Long.parseLong(timestamp)) >= FIVE_MINUTES) {
-            // 如果时间戳与当前时间相差五分钟或以上，调用handleNoAuth(response)方法进行处理
             return handleNoAuth(response);
         }
-
         // 实际情况中是从数据库中查出 secretKey
         String serverSign = SignUtils.genSign(body, "abcdefgh");
         if (!sign.equals(serverSign)) {
