@@ -2,14 +2,14 @@ package com.yupi.project.service;
 
 
 import com.baomidou.mybatisplus.extension.service.IService;
-import com.yupi.project.model.entity.User;
+import com.yupi.yuapicommon.model.entity.User;
 
 import javax.servlet.http.HttpServletRequest;
 
 /**
  * 用户服务
  *
- * @author yupi
+
  */
 public interface UserService extends IService<User> {
 

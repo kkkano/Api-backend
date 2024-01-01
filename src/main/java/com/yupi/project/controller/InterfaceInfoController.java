@@ -11,12 +11,12 @@ import com.yupi.project.model.dto.interfaceInfo.InterfaceInfoAddRequest;
 import com.yupi.project.model.dto.interfaceInfo.InterfaceInfoInvokeRequest;
 import com.yupi.project.model.dto.interfaceInfo.InterfaceInfoQueryRequest;
 import com.yupi.project.model.dto.interfaceInfo.InterfaceInfoUpdateRequest;
-import com.yupi.project.model.entity.InterfaceInfo;
-import com.yupi.project.model.entity.User;
 import com.yupi.project.model.enums.InterfaceInfoStatusEnum;
 import com.yupi.project.service.InterfaceInfoService;
 import com.yupi.project.service.UserService;
 import com.yupi.yuapiclientsdk.client.YuApiClient;
+import com.yupi.yuapicommon.model.entity.InterfaceInfo;
+import com.yupi.yuapicommon.model.entity.User;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.BeanUtils;
@@ -29,7 +29,7 @@ import java.util.List;
 /**
  * 接口管理
  *
- * @author yupi
+
  */
 @RestController
 @RequestMapping("/interfaceInfo")
@@ -41,8 +41,10 @@ public class InterfaceInfoController {
 
     @Resource
     private UserService userService;
+
     @Resource
     private YuApiClient yuApiClient;
+
     // region 增删改查
 
     /**
@@ -196,6 +198,8 @@ public class InterfaceInfoController {
         return ResultUtils.success(interfaceInfoPage);
     }
 
+    // endregion
+
     /**
      * 发布
      *
@@ -210,33 +214,24 @@ public class InterfaceInfoController {
         if (idRequest == null || idRequest.getId() <= 0) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
-        // 1.校验该接口是否存在
         long id = idRequest.getId();
+        // 判断是否存在
         InterfaceInfo oldInterfaceInfo = interfaceInfoService.getById(id);
         if (oldInterfaceInfo == null) {
             throw new BusinessException(ErrorCode.NOT_FOUND_ERROR);
         }
-        // 2.判断该接口是否可以调用
-        // 创建一个User对象(这里先模拟一下，搞个假数据)
+        // 判断该接口是否可以调用
         com.yupi.yuapiclientsdk.model.User user = new com.yupi.yuapiclientsdk.model.User();
-        // 设置user对象的username属性为"test"
         user.setUsername("test");
-        // 通过yuApiClient的getUsernameByPost方法传入user对象，并将返回的username赋值给username变量
         String username = yuApiClient.getUserNameByPost(user);
-        // 如果username为空或空白字符串
         if (StringUtils.isBlank(username)) {
-            // 抛出系统错误的业务异常，表示系统内部异常，并附带错误信息"接口验证失败"
             throw new BusinessException(ErrorCode.SYSTEM_ERROR, "接口验证失败");
         }
-        // 创建一个InterfaceInfo对象
+        // 仅本人或管理员可修改
         InterfaceInfo interfaceInfo = new InterfaceInfo();
-        // 设置interfaceInfo的id属性为id
         interfaceInfo.setId(id);
-        // 3.修改接口数据库中的状态字段为上线
         interfaceInfo.setStatus(InterfaceInfoStatusEnum.ONLINE.getValue());
-        // 调用interfaceInfoService的updateById方法，传入interfaceInfo对象，并将返回的结果赋值给result变量
         boolean result = interfaceInfoService.updateById(interfaceInfo);
-        // 返回一个成功的响应，响应体中携带result值
         return ResultUtils.success(result);
     }
 
@@ -254,22 +249,17 @@ public class InterfaceInfoController {
         if (idRequest == null || idRequest.getId() <= 0) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
-        // 1.校验该接口是否存在
         long id = idRequest.getId();
+        // 判断是否存在
         InterfaceInfo oldInterfaceInfo = interfaceInfoService.getById(id);
         if (oldInterfaceInfo == null) {
             throw new BusinessException(ErrorCode.NOT_FOUND_ERROR);
         }
-
-        // 创建一个InterfaceInfo对象
+        // 仅本人或管理员可修改
         InterfaceInfo interfaceInfo = new InterfaceInfo();
-        // 设置interfaceInfo的id属性为id
         interfaceInfo.setId(id);
-        // 3.修改接口数据库中的状态字段为下线
         interfaceInfo.setStatus(InterfaceInfoStatusEnum.OFFLINE.getValue());
-        // 调用interfaceInfoService的updateById方法，传入interfaceInfo对象，并将返回的结果赋值给result变量
         boolean result = interfaceInfoService.updateById(interfaceInfo);
-        // 返回一个成功的响应，响应体中携带result值
         return ResultUtils.success(result);
     }
 
@@ -282,12 +272,13 @@ public class InterfaceInfoController {
      */
     @PostMapping("/invoke")
     public BaseResponse<Object> invokeInterfaceInfo(@RequestBody InterfaceInfoInvokeRequest interfaceInfoInvokeRequest,
-                                                    HttpServletRequest request) {
+                                                     HttpServletRequest request) {
         if (interfaceInfoInvokeRequest == null || interfaceInfoInvokeRequest.getId() <= 0) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
         long id = interfaceInfoInvokeRequest.getId();
         String userRequestParams = interfaceInfoInvokeRequest.getUserRequestParams();
+        // 判断是否存在
         InterfaceInfo oldInterfaceInfo = interfaceInfoService.getById(id);
         if (oldInterfaceInfo == null) {
             throw new BusinessException(ErrorCode.NOT_FOUND_ERROR);
@@ -295,22 +286,14 @@ public class InterfaceInfoController {
         if (oldInterfaceInfo.getStatus() == InterfaceInfoStatusEnum.OFFLINE.getValue()) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR, "接口已关闭");
         }
-        // 获取当前登录用户的ak和sk，这样相当于用户自己的这个身份去调用，
-        // 也不会担心它刷接口，因为知道是谁刷了这个接口，会比较安全
         User loginUser = userService.getLoginUser(request);
         String accessKey = loginUser.getAccessKey();
         String secretKey = loginUser.getSecretKey();
-        //临时的yuapiclient对象
-        YuApiClient tempClient = new YuApiClient(accessKey,secretKey);
-        // 我们只需要进行测试调用，所以我们需要解析传递过来的参数。
+        YuApiClient tempClient = new YuApiClient(accessKey, secretKey);
         Gson gson = new Gson();
-        // 将用户请求参数转换为com.yupi.yuapiclientsdk.model.User对象
         com.yupi.yuapiclientsdk.model.User user = gson.fromJson(userRequestParams, com.yupi.yuapiclientsdk.model.User.class);
-        // 调用YuApiClient的getUsernameByPost方法，传入用户对象，获取用户名
-//        String usernameByPost = this.yuApiClient.getUserNameByPost(user);
         String usernameByPost = tempClient.getUserNameByPost(user);
-        // 返回成功响应，并包含调用结果
         return ResultUtils.success(usernameByPost);
     }
-}
 
+}
